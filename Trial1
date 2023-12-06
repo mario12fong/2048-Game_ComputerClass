@@ -1,0 +1,235 @@
+//
+//  main.cpp
+//  2048 game
+//
+//  Created by Adam Balatka on 11/27/23.
+//
+
+#include <iostream>
+#include <iomanip>
+#include <cstdlib>
+#include <ctime>
+
+using namespace std;
+
+// Draw initial game board with 0's for standardization
+int board[4][4] = { {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0} };
+
+// Initialize the game board to values of 0 with flow of control loops
+void initializeBoardToZeros(int board[4][4]) {
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++)
+            board[i][j] = 0;
+    }
+}
+
+// Generating random numbers 2 or 4 in the board
+void generateRandomNumberOnTheBoard(int board[4][4]) {  // for a 4x4 board input
+    srand(static_cast<unsigned int>(time(nullptr)));  // generate vector of numbers with srand(time) function
+    int randomNumber = rand() % 10;  // select 10% of the time
+    int placedNumber = (randomNumber == 0) ? 4 : 2;  // generates number 4 randomly 10% of the time
+    // rest of code is just randomly generating numbers on any position of the 4x4 board
+    int row = rand() % 4;
+    int column = rand() % 4;
+    while (board[row][column] != 0) {
+        row = rand() % 4;
+        column = rand() % 4;
+    }
+    board[row][column] = placedNumber;
+
+}
+
+// function to draw new board with randomly generated numbers and instructions
+void drawBoard(int board[4][4]) {
+    cout << "\033[H";  // clear board command
+        cout << "Commands are w = up, s = down, a = left, d = right, q = quit, n = new game" << endl;
+    generateRandomNumberOnTheBoard(board);
+    generateRandomNumberOnTheBoard(board);
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            cout << setw(1) << board[i][j] << " | " << setw(4);
+        }
+        cout << endl;
+        cout << "---------------\n";
+    }
+    cout << "Move:";
+
+}
+
+void drawBoardInGame(int board[4][4]) {
+    cout << "\033[H";  // clear board command
+    cout << "Commands are w = up, s = down, a = left, d = right, q = quit, n = new game" << endl;
+    generateRandomNumberOnTheBoard(board);
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            cout << setw(1) << board[i][j] << " | " << setw(4);
+        }
+        cout << endl;
+        cout << "---------------\n";
+    }
+    cout << "Move:";
+
+}
+
+// function to merge current position occupied by a number and neighbor
+void mergeNumbers(int& current, int& neighbor) {
+    current *= 2;
+    neighbor = 0;
+}
+
+/* Hereby introduced the directional functions: all of them have a similar structure, using flow of control loops
+and conditional statements to move number in desired direction. Each directional function takes the board as input,
+and then it also includes the above-defined mergeNumbers function. Each function also uses the built-in C++ swap() function.
+*/
+void moveUp(int board[4][4]) {
+    for (int col = 0; col < 4; col++) {     
+        for (int row = 0; row < 3; row++) {     // include one less row to avoid redundant movement
+            if (board[row][col] != 0) {
+                int currentRow = row;
+                while (currentRow < 3 && board[currentRow + 1][col] == 0) {  // move tile up as long as there are open spaces
+                    currentRow++;
+                }
+                if (currentRow < 3 && board[currentRow + 1][col] == board[row][col]) {  // for same-value tiles, add numbers
+                    mergeNumbers(board[row][col], board[currentRow + 1][col]);
+                }
+            }
+        }
+    }
+
+    for (int col = 0; col < 4; col++) {  // complementary loop to swap replaced tiles in movement
+        for (int row = 1; row < 4; row++) {
+            if (board[row][col] != 0) {
+                int currentRow = row;
+                while (currentRow > 0 && board[currentRow - 1][col] == 0) {
+                    swap(board[currentRow][col], board[currentRow - 1][col]);
+                    currentRow--;
+                }
+            }
+        }
+    }
+}
+
+// same basic idea as the moveUp function, with appropriate changes made in directional orders
+void moveDown(int board[4][4]) {
+    for (int col = 0; col < 4; col++) {
+        for (int row = 3; row > 0; row--) {  // starts opposite side of moveUp function
+            if (board[row][col] != 0) {
+                int currentRow = row;
+                while (currentRow > 0 && board[currentRow - 1][col] == 0) {
+                    currentRow--;
+                }
+                if (currentRow > 0 && board[currentRow - 1][col] == board[row][col]) {
+                    mergeNumbers(board[row][col], board[currentRow - 1][col]);
+                }
+            }
+        }
+    }
+
+    for (int col = 0; col < 4; col++) {
+        for (int row = 2; row >= 0; row--) {
+            if (board[row][col] != 0) {
+                int currentRow = row;
+                while (currentRow < 3 && board[currentRow + 1][col] == 0) {
+                    swap(board[currentRow][col], board[currentRow + 1][col]);
+                    currentRow++;
+                }
+            }
+        }
+    }
+}
+
+void moveLeft(int board[4][4]) {
+    for (int row = 0; row < 4; row++) {
+        for (int col = 0; col < 3; col++) {
+            if (board[row][col] != 0) {
+                int currentCol = col;
+                while (currentCol < 3 && board[row][currentCol + 1] == 0) {
+                    currentCol++;
+                }
+                if (currentCol < 3 && board[row][currentCol + 1] == board[row][col]) {
+                    mergeNumbers(board[row][col], board[row][currentCol + 1]);
+                }
+            }
+        }
+    }
+
+    for (int row = 0; row < 4; row++) {
+        for (int col = 1; col < 4; col++) {
+            if (board[row][col] != 0) {
+                int currentCol = col;
+                while (currentCol > 0 && board[row][currentCol - 1] == 0) {
+                    swap(board[row][currentCol], board[row][currentCol - 1]);
+                    currentCol--;
+                }
+            }
+        }
+    }
+}
+
+void moveRight(int board[4][4]) {
+    for (int row = 0; row < 4; row++) {
+        for (int col = 3; col > 0; col--) {
+            if (board[row][col] != 0) {
+                int currentCol = col;
+                while (currentCol > 0 && board[row][currentCol - 1] == 0) {
+                    currentCol--;
+                }
+                if (currentCol > 0 && board[row][currentCol - 1] == board[row][col]) {
+                    mergeNumbers(board[row][col], board[row][currentCol - 1]);
+                }
+            }
+        }
+    }
+
+    for (int row = 0; row < 4; row++) {
+        for (int col = 2; col >= 0; col--) {
+            if (board[row][col] != 0) {
+                int currentCol = col;
+                while (currentCol < 3 && board[row][currentCol + 1] == 0) {
+                    swap(board[row][currentCol], board[row][currentCol + 1]);
+                    currentCol++;
+                }
+            }
+        }
+    }
+}
+
+
+// final funciton which calls all of the previous functions and sets game board to user-input movement
+void game(int board[4][4]) {
+    char move;
+    initializeBoardToZeros(board);
+    drawBoard(board);
+    while (true) {
+        cin >> move;
+        switch (move) {
+        case 'w':
+            moveUp(board);
+            break;
+        case 's':
+            moveDown(board);
+            break;
+        case 'a':
+            moveLeft(board);
+            break;
+        case 'd':
+            moveRight(board);
+            break;
+        case 'q':
+            cout << "Thank you for playing.";
+            exit(0);
+        case 'n':
+            initializeBoardToZeros(board);
+            break;
+        default:
+            cout << "Invalid input. Please use w/a/s/d keys.";
+        }
+        drawBoardInGame(board);
+    }
+}
+
+// calls final meta-function to start the game
+int main() {
+    game(board);
+    return 0;
+}
